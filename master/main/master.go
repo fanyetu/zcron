@@ -4,12 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"runtime"
+	"time"
 	"zcron/master"
 )
 
 var (
-	// config地址参数
-	config string
+	// configFile地址参数
+	configFile string
 )
 
 func initEnv() {
@@ -19,7 +20,7 @@ func initEnv() {
 
 func initArgs() {
 	// 设置参数解析规则
-	flag.StringVar(&config, "config", "./master.json", "配置文件")
+	flag.StringVar(&configFile, "config", "./master.json", "配置文件")
 	// 解析参数
 	flag.Parse()
 }
@@ -35,13 +36,22 @@ func main() {
 	initEnv()
 
 	// 初始化配置
-	if err = master.InitConfig(config); err != nil {
+	if err = master.InitConfig(configFile); err != nil {
+		goto ERR
+	}
+
+	// 初始化任务管理器
+	if err = master.InitJobMgr(); err != nil {
 		goto ERR
 	}
 
 	// 初始化ApiServer
 	if err = master.InitApiServer(); err != nil {
 		goto ERR
+	}
+
+	for {
+		time.Sleep(1 * time.Second)
 	}
 
 	return
