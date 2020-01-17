@@ -14,6 +14,9 @@ type Response struct {
 	Data  interface{} `json:"data"`
 }
 
+const SUCCESS int = 0
+const FAILURE int = 0
+
 func BuildResponse(errno int, msg string, data interface{}) (resp []byte, err error) {
 	var (
 		response Response

@@ -79,3 +79,26 @@ func (jobMgr *JobMgr) SaveJob(job *common.Job) (oldJob *common.Job, err error) {
 
 	return
 }
+
+func (jobMgr *JobMgr) DeleteJob(jobName string) (oldJob *common.Job, err error) {
+	var (
+		key       string
+		delResp   *clientv3.DeleteResponse
+		oldJobObj common.Job
+	)
+	key = "/cron/job/" + jobName
+
+	if delResp, err = jobMgr.kv.Delete(context.Background(), key, clientv3.WithPrevKV()); err != nil {
+		return
+	}
+
+	if len(delResp.PrevKvs) != 0 {
+		if err = json.Unmarshal(delResp.PrevKvs[0].Value, &oldJobObj); err != nil {
+			err = nil
+			return
+		}
+
+		oldJob = &oldJobObj
+	}
+	return
+}

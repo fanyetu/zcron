@@ -2,6 +2,7 @@ package master
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -17,8 +18,44 @@ var (
 	G_apiServer *ApiServer
 )
 
+func writeJson(resp http.ResponseWriter, bytes []byte) (err error) {
+	resp.Header().Set("Content-Type", "application/json")
+	_, err = resp.Write(bytes)
+	return
+}
+
+// 删除任务接口
+func handleJobDelete(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err     error
+		jobName string
+		oldJob  *common.Job
+		bytes   []byte
+	)
+	if err = req.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	jobName = req.Form.Get("jobName")
+
+	if oldJob, err = G_jobMgr.DeleteJob(jobName); err != nil {
+		goto ERR
+	}
+
+	// 返回正确内容
+	bytes, _ = common.BuildResponse(common.SUCCESS, "成功", oldJob)
+	_ = writeJson(resp, bytes)
+
+	return
+ERR:
+	fmt.Println(err)
+	// 返回错误内容
+	bytes, _ = common.BuildResponse(common.FAILURE, err.Error(), nil)
+	_ = writeJson(resp, bytes)
+}
+
 // 保存任务接口，保存到etcdzhong
-func handleSave(resp http.ResponseWriter, req *http.Request) {
+func handleJobSave(resp http.ResponseWriter, req *http.Request) {
 	var (
 		err      error
 		jobParam string
@@ -46,18 +83,15 @@ func handleSave(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	// 返回正确内容
-	if bytes, err = common.BuildResponse(0, "成功", oldJob); err == nil {
-		resp.Header().Set("Content-Type", "application/json")
-		resp.Write(bytes)
-	}
+	bytes, _ = common.BuildResponse(common.SUCCESS, "成功", oldJob)
+	_ = writeJson(resp, bytes)
 
 	return
 ERR:
+	fmt.Println(err)
 	// 返回错误内容
-	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
-		resp.Header().Set("Content-Type", "application/json")
-		resp.Write(bytes)
-	}
+	bytes, _ = common.BuildResponse(common.FAILURE, err.Error(), nil)
+	_ = writeJson(resp, bytes)
 }
 
 // 初始化ApiServer
@@ -70,7 +104,8 @@ func InitApiServer() (err error) {
 
 	// 创建路由
 	mux = http.NewServeMux()
-	mux.HandleFunc("/job/save", handleSave)
+	mux.HandleFunc("/job/save", handleJobSave)
+	mux.HandleFunc("/job/delete", handleJobDelete)
 
 	// 创建监听
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiServerPort)); err != nil {
