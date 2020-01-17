@@ -134,3 +134,26 @@ func (jobMgr *JobMgr) ListJob() (jobList []*common.Job, err error) {
 
 	return
 }
+
+// 杀死任务
+func (jobMgr *JobMgr) KillJob(jobName string) (err error) {
+	var (
+		key       string
+		leaseResp *clientv3.LeaseGrantResponse
+		leaseId   clientv3.LeaseID
+	)
+	key = common.JOB_KILL_DIR + jobName
+
+	// 创建一个1秒过期的租约
+	if leaseResp, err = jobMgr.Lease.Grant(context.Background(), 1); err != nil {
+		return
+	}
+
+	leaseId = leaseResp.ID
+
+	if _, err = jobMgr.kv.Put(context.Background(), key, "", clientv3.WithLease(leaseId)); err != nil {
+		return
+	}
+
+	return
+}

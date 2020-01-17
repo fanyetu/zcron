@@ -116,6 +116,34 @@ ERR:
 	_ = writeJson(resp, bytes)
 }
 
+// 杀死任务接口
+func handleJobKill(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err     error
+		jobName string
+		bytes   []byte
+	)
+
+	if err = req.ParseForm(); err != nil {
+		goto ERR
+	}
+
+	jobName = req.Form.Get("jobName")
+
+	if err = G_jobMgr.KillJob(jobName); err != nil {
+		goto ERR
+	}
+
+	bytes, _ = common.BuildResponse(common.SUCCESS, "成功", nil)
+	_ = writeJson(resp, bytes)
+
+	return
+ERR:
+	fmt.Println(err)
+	bytes, _ = common.BuildResponse(common.FAILURE, err.Error(), nil)
+	_ = writeJson(resp, bytes)
+}
+
 // 初始化ApiServer
 func InitApiServer() (err error) {
 	var (
@@ -129,6 +157,7 @@ func InitApiServer() (err error) {
 	mux.HandleFunc("/job/save", handleJobSave)
 	mux.HandleFunc("/job/delete", handleJobDelete)
 	mux.HandleFunc("/job/list", handleJobList)
+	mux.HandleFunc("/job/kill", handleJobKill)
 
 	// 创建监听
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiServerPort)); err != nil {
