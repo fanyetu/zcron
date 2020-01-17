@@ -47,6 +47,7 @@ func handleSave(resp http.ResponseWriter, req *http.Request) {
 
 	// 返回正确内容
 	if bytes, err = common.BuildResponse(0, "成功", oldJob); err == nil {
+		resp.Header().Set("Content-Type", "application/json")
 		resp.Write(bytes)
 	}
 
@@ -54,6 +55,7 @@ func handleSave(resp http.ResponseWriter, req *http.Request) {
 ERR:
 	// 返回错误内容
 	if bytes, err = common.BuildResponse(-1, err.Error(), nil); err == nil {
+		resp.Header().Set("Content-Type", "application/json")
 		resp.Write(bytes)
 	}
 }
