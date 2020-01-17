@@ -24,6 +24,28 @@ func writeJson(resp http.ResponseWriter, bytes []byte) (err error) {
 	return
 }
 
+// 遍历任务接口
+func handleJobList(resp http.ResponseWriter, req *http.Request) {
+	var (
+		err     error
+		jobList []*common.Job
+		bytes   []byte
+	)
+
+	if jobList, err = G_jobMgr.ListJob(); err != nil {
+		goto ERR
+	}
+
+	bytes, _ = common.BuildResponse(common.SUCCESS, "成功", jobList)
+	_ = writeJson(resp, bytes)
+
+	return
+ERR:
+	fmt.Println(err)
+	bytes, _ = common.BuildResponse(common.FAILURE, err.Error(), nil)
+	_ = writeJson(resp, bytes)
+}
+
 // 删除任务接口
 func handleJobDelete(resp http.ResponseWriter, req *http.Request) {
 	var (
@@ -106,6 +128,7 @@ func InitApiServer() (err error) {
 	mux = http.NewServeMux()
 	mux.HandleFunc("/job/save", handleJobSave)
 	mux.HandleFunc("/job/delete", handleJobDelete)
+	mux.HandleFunc("/job/list", handleJobList)
 
 	// 创建监听
 	if listener, err = net.Listen("tcp", ":"+strconv.Itoa(G_config.ApiServerPort)); err != nil {
