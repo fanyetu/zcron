@@ -1,0 +1,7 @@
+{
+  "etcd集群地址": "字符串数组",
+  "etcdEndpoints": ["127.0.0.1:2379"],
+
+  "etcd超时时间": "单位毫秒",
+  "etcdDialTimeout": 5000
+}

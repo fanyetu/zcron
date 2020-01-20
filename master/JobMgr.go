@@ -12,7 +12,7 @@ import (
 type JobMgr struct {
 	client *clientv3.Client
 	kv     clientv3.KV
-	Lease  clientv3.Lease
+	lease  clientv3.Lease
 }
 
 var (
@@ -43,7 +43,7 @@ func InitJobMgr() (err error) {
 	G_jobMgr = &JobMgr{
 		client: client,
 		kv:     kv,
-		Lease:  lease,
+		lease:  lease,
 	}
 
 	return
@@ -145,7 +145,7 @@ func (jobMgr *JobMgr) KillJob(jobName string) (err error) {
 	key = common.JOB_KILL_DIR + jobName
 
 	// 创建一个1秒过期的租约
-	if leaseResp, err = jobMgr.Lease.Grant(context.Background(), 1); err != nil {
+	if leaseResp, err = jobMgr.lease.Grant(context.Background(), 1); err != nil {
 		return
 	}
 
