@@ -116,7 +116,7 @@ func (scheduler *Scheduler) PushJobEvent(jobEvent *common.JobEvent) {
 // 初始化scheduler
 func InitScheduler() (err error) {
 	G_scheduler = &Scheduler{
-		JobEventChan: make(chan *common.JobEvent),
+		JobEventChan: make(chan *common.JobEvent, 1000),
 		JobPlanTable: make(map[string]*common.JobPlan),
 	}
 
