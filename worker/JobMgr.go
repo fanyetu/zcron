@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
@@ -45,8 +44,7 @@ func (jobMgr *JobMgr) watchJob() (err error) {
 			// 构建事件
 			jobEvent = common.BuildJobEvent(common.SAVE, job)
 
-			// TODO 推送事件给scheduler
-			fmt.Println(jobEvent)
+			G_scheduler.PushJobEvent(jobEvent)
 		}
 	}
 
@@ -71,8 +69,7 @@ func (jobMgr *JobMgr) watchJob() (err error) {
 						JobName: jobName,
 					})
 				}
-				fmt.Println(jobEvent)
-				// TODO 将事件推送给scheduler
+				G_scheduler.PushJobEvent(jobEvent)
 			}
 		}
 	}()
