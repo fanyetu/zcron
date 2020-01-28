@@ -6,9 +6,12 @@ import (
 	"zcron/common"
 )
 
+// Scheduler 调度器
 type Scheduler struct {
-	JobEventChan chan *common.JobEvent
-	JobPlanTable map[string]*common.JobPlan
+	JobEventChan      chan *common.JobEvent
+	JobPlanTable      map[string]*common.JobPlan
+	JobExecutingTable map[string]*common.JobExecutingInfo
+	JobResultChan     chan *common.JobExecuteResult
 }
 
 var (
@@ -39,8 +42,34 @@ func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 	}
 }
 
+// 处理任务执行结果
+func (scheduler *Scheduler) handleJobResult(jobResult *common.JobExecuteResult) {
+	// 将执行信息从table中删除
+	delete(scheduler.JobExecutingTable, jobResult.ExecutingInfo.Job.JobName)
+
+	// 打印执行结果
+	fmt.Println("执行结果：", string(jobResult.Output), jobResult.Err, jobResult.StartTime, jobResult.EndTime)
+}
+
 func (scheduler *Scheduler) tryStartJob(jobPlan *common.JobPlan) {
-	//
+	var (
+		executingInfo *common.JobExecutingInfo
+		jobExecuting  bool
+	)
+	// 判断当前是否在执行队列中
+	if executingInfo, jobExecuting = scheduler.JobExecutingTable[jobPlan.Job.JobName]; jobExecuting {
+		fmt.Println("当前任务未退出，取消执行：", jobPlan.Job.JobName)
+		return
+	}
+
+	// 构建执行信息
+	executingInfo = common.BuildJobExecutionInfo(jobPlan)
+
+	// 保存执行状态
+	scheduler.JobExecutingTable[jobPlan.Job.JobName] = executingInfo
+
+	// 执行任务
+	G_executor.ExecuteJob(executingInfo)
 }
 
 // 尝试执行planTable中的任务
@@ -64,8 +93,7 @@ func (scheduler *Scheduler) tryExecJob() (scheduleAfter time.Duration) {
 	for _, jobPlan = range scheduler.JobPlanTable {
 		// 如果下次执行时间小于等于当前时间，那么就执行任务
 		if jobPlan.NextTime.Before(now) || jobPlan.NextTime.Equal(now) {
-			// TODO 执行任务
-			fmt.Println("执行任务：", jobPlan.Job.Command)
+			scheduler.tryStartJob(jobPlan)
 			// 执行完成后更新下次执行时间
 			jobPlan.NextTime = jobPlan.Expr.Next(now)
 		}
@@ -89,6 +117,7 @@ func (scheduler *Scheduler) scheduleLoop() {
 		jobEvent      *common.JobEvent
 		scheduleAfter time.Duration
 		timer         *time.Timer
+		jobResult     *common.JobExecuteResult
 	)
 
 	// 先尝试执行一次任务
@@ -104,6 +133,8 @@ func (scheduler *Scheduler) scheduleLoop() {
 			// 处理任务事件
 			scheduler.handleJobEvent(jobEvent)
 		case <-timer.C: // 最近的任务到期了
+		case jobResult = <-scheduler.JobResultChan:
+			scheduler.handleJobResult(jobResult)
 		}
 
 		// 调度一次任务，并更新timer
@@ -112,16 +143,22 @@ func (scheduler *Scheduler) scheduleLoop() {
 	}
 }
 
-// 向调度协程推送事件
+// PushJobEvent 向调度协程推送事件
 func (scheduler *Scheduler) PushJobEvent(jobEvent *common.JobEvent) {
 	scheduler.JobEventChan <- jobEvent
 }
 
-// 初始化scheduler
+func (scheduler *Scheduler) PushJobResult(jobResult *common.JobExecuteResult) {
+	scheduler.JobResultChan <- jobResult
+}
+
+// InitScheduler 初始化scheduler
 func InitScheduler() (err error) {
 	G_scheduler = &Scheduler{
-		JobEventChan: make(chan *common.JobEvent, 1000),
-		JobPlanTable: make(map[string]*common.JobPlan),
+		JobEventChan:      make(chan *common.JobEvent, 1000),
+		JobPlanTable:      make(map[string]*common.JobPlan),
+		JobExecutingTable: make(map[string]*common.JobExecutingInfo),
+		JobResultChan:     make(chan *common.JobExecuteResult, 1000),
 	}
 
 	go G_scheduler.scheduleLoop()

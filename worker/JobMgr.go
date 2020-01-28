@@ -8,6 +8,7 @@ import (
 	"zcron/common"
 )
 
+// JobMgr 任务管理器
 type JobMgr struct {
 	client  *clientv3.Client
 	kv      clientv3.KV

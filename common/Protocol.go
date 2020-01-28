@@ -32,9 +32,17 @@ type JobPlan struct {
 }
 
 type JobExecutingInfo struct {
-	Job           *Job
-	StartTime     time.time
-	RealStartTime time.Time
+	Job      *Job
+	PlanTime time.Time
+	RealTime time.Time
+}
+
+type JobExecuteResult struct {
+	ExecutingInfo *JobExecutingInfo // 执行状态
+	Output        []byte
+	Err           error
+	StartTime     time.Time
+	EndTime       time.Time
 }
 
 type Response struct {
@@ -45,6 +53,15 @@ type Response struct {
 
 const SUCCESS int = 0
 const FAILURE int = 0
+
+func BuildJobExecutionInfo(jobPlan *JobPlan) (jobExecutionInfo *JobExecutingInfo) {
+	jobExecutionInfo = &JobExecutingInfo{
+		Job:      jobPlan.Job,
+		PlanTime: jobPlan.NextTime,
+		RealTime: time.Now(),
+	}
+	return
+}
 
 // 构建任务计划
 func BuildJobPlan(job *Job) (jobPlan *JobPlan, err error) {

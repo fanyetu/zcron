@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 )
 
+// Config 配置
 type Config struct {
 	EtcdEndpoints   []string `json:"etcdEndpoints"`
 	EtcdDialTimeout int      `json:"etcdDialTimeout"`
@@ -14,7 +15,7 @@ var (
 	G_config *Config
 )
 
-// 初始化配置文件
+// InitConfig 初始化配置文件
 func InitConfig(filename string) (err error) {
 	var (
 		content []byte
