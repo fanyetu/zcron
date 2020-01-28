@@ -39,6 +39,10 @@ func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 	}
 }
 
+func (scheduler *Scheduler) tryStartJob(jobPlan *common.JobPlan) {
+	//
+}
+
 // 尝试执行planTable中的任务
 func (scheduler *Scheduler) tryExecJob() (scheduleAfter time.Duration) {
 	var (

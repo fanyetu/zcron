@@ -31,6 +31,12 @@ type JobPlan struct {
 	NextTime time.Time            // 下次执行时间
 }
 
+type JobExecutingInfo struct {
+	Job           *Job
+	StartTime     time.time
+	RealStartTime time.Time
+}
+
 type Response struct {
 	Errno int         `json:"errno"`
 	Msg   string      `json:"msg"`
