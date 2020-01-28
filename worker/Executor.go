@@ -22,23 +22,38 @@ func (executor *Executor) ExecuteJob(info *common.JobExecutingInfo) {
 			output []byte
 			err    error
 			result *common.JobExecuteResult
+			lock   *JobLock
 		)
 		result = &common.JobExecuteResult{
 			ExecutingInfo: info,
 			Output:        make([]byte, 0),
 		}
 
+		// 首先创建分布式锁
+		lock = G_jobMgr.CreateJobLock(info.Job.JobName)
+
 		// 执行开始时间
 		result.StartTime = time.Now()
 
-		// 执行命令
-		cmd = exec.CommandContext(context.Background(), "C:\\cygwin64\\bin\\bash.exe", "-c", info.Job.Command)
+		// 尝试上锁
+		err = lock.TryLock()
+		defer lock.Unlock()
 
-		output, err = cmd.CombinedOutput()
+		if err != nil {
+			// 上锁失败
+			result.Err = err
+			result.EndTime = time.Now()
+		} else {
+			result.StartTime = time.Now()
+			// 执行命令
+			cmd = exec.CommandContext(context.Background(), "C:\\cygwin64\\bin\\bash.exe", "-c", info.Job.Command)
 
-		result.EndTime = time.Now()
-		result.Output = output
-		result.Err = err
+			output, err = cmd.CombinedOutput()
+
+			result.EndTime = time.Now()
+			result.Output = output
+			result.Err = err
+		}
 
 		// 执行完成后，通知scheduler将执行信息删除
 		G_scheduler.PushJobResult(result)

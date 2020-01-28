@@ -20,6 +20,16 @@ var (
 	G_jobMgr *JobMgr
 )
 
+// 创建一个分布式锁
+func (jobMgr *JobMgr) CreateJobLock(jobName string) (jobLock *JobLock) {
+	jobLock = &JobLock{
+		kv:      jobMgr.kv,
+		lease:   jobLock.lease,
+		jobName: jobName,
+	}
+	return
+}
+
 // 监听任务变化，并传送给scheduler
 func (jobMgr *JobMgr) watchJob() (err error) {
 	var (
