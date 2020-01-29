@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorhill/cronexpr"
 	"strings"
@@ -12,6 +13,7 @@ type JobEventType int64
 const (
 	SAVE   JobEventType = 1
 	DELETE JobEventType = 2
+	KILL   JobEventType = 3
 )
 
 type Job struct {
@@ -35,6 +37,9 @@ type JobExecutingInfo struct {
 	Job      *Job
 	PlanTime time.Time
 	RealTime time.Time
+
+	CancelCtx  context.Context
+	CancelFunc context.CancelFunc
 }
 
 type JobExecuteResult struct {
@@ -55,10 +60,20 @@ const SUCCESS int = 0
 const FAILURE int = 0
 
 func BuildJobExecutionInfo(jobPlan *JobPlan) (jobExecutionInfo *JobExecutingInfo) {
+	// 创建执行信息的时候，创建一个可以被取消的上下文
+	var (
+		cancelCtx  context.Context
+		cancelFunc context.CancelFunc
+	)
+
+	cancelCtx, cancelFunc = context.WithCancel(context.Background())
 	jobExecutionInfo = &JobExecutingInfo{
 		Job:      jobPlan.Job,
 		PlanTime: jobPlan.NextTime,
 		RealTime: time.Now(),
+
+		CancelCtx:  cancelCtx,
+		CancelFunc: cancelFunc,
 	}
 	return
 }

@@ -21,9 +21,11 @@ var (
 // 处理任务事件
 func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 	var (
-		err     error
-		jobPlan *common.JobPlan
-		exists  bool
+		err              error
+		jobPlan          *common.JobPlan
+		exists           bool
+		jobExecuting     bool
+		jobExecutingInfo *common.JobExecutingInfo
 	)
 	// 根据任务事件的类型来对当前的任务计划列表进行修改
 	switch jobEvent.Type {
@@ -38,6 +40,12 @@ func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 		// 如果任务在表中，就删除
 		if jobPlan, exists = scheduler.JobPlanTable[jobEvent.Job.JobName]; exists {
 			delete(scheduler.JobPlanTable, jobEvent.Job.JobName)
+		}
+	case common.KILL:
+		// 强杀任务事件
+		if jobExecutingInfo, jobExecuting = scheduler.JobExecutingTable[jobEvent.Job.JobName]; jobExecuting {
+			// 调用任务执行信息中的cancelFunc，取消任务执行
+			jobExecutingInfo.CancelFunc()
 		}
 	}
 }

@@ -88,6 +88,38 @@ func (jobMgr *JobMgr) watchJob() (err error) {
 	return
 }
 
+// 监听杀死任务通知
+func (jobMgr *JobMgr) watchKiller() (err error) {
+	var (
+		watchChan clientv3.WatchChan
+		watchResp clientv3.WatchResponse
+		event     *clientv3.Event
+		job       *common.Job
+		jobEvent  *common.JobEvent
+	)
+	// 启动协程，监听killer目录的变化
+	go func() {
+		// 从当前时刻开始监听
+		watchChan = jobMgr.watcher.Watch(context.Background(), common.JOB_KILL_DIR, clientv3.WithPrefix())
+		for watchResp = range watchChan {
+			for _, event = range watchResp.Events {
+				switch event.Type {
+				case mvccpb.PUT:
+					// 只关心put类型的事件
+					job = &common.Job{
+						JobName: string(event.Kv.Key),
+					}
+					jobEvent = common.BuildJobEvent(common.KILL, job)
+					// 推送事件到scheduler
+					G_scheduler.PushJobEvent(jobEvent)
+				case mvccpb.DELETE:
+				}
+			}
+		}
+	}()
+	return
+}
+
 // 初始化JobMgr
 func InitJobMgr() (err error) {
 	var (
@@ -119,6 +151,10 @@ func InitJobMgr() (err error) {
 	}
 
 	if err = G_jobMgr.watchJob(); err != nil {
+		return
+	}
+
+	if err = G_jobMgr.watchKiller(); err != nil {
 		return
 	}
 

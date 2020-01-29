@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"context"
 	"os/exec"
 	"time"
 	"zcron/common"
@@ -45,8 +44,8 @@ func (executor *Executor) ExecuteJob(info *common.JobExecutingInfo) {
 			result.EndTime = time.Now()
 		} else {
 			result.StartTime = time.Now()
-			// 执行命令
-			cmd = exec.CommandContext(context.Background(), "C:\\cygwin64\\bin\\bash.exe", "-c", info.Job.Command)
+			// 执行命令，传入执行信息的cancelCtx，可以被scheduler取消
+			cmd = exec.CommandContext(info.CancelCtx, "C:\\cygwin64\\bin\\bash.exe", "-c", info.Job.Command)
 
 			output, err = cmd.CombinedOutput()
 
