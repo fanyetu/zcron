@@ -22,6 +22,21 @@ type Job struct {
 	CronExpr string `json:"cronExpr"`
 }
 
+type LogBatch struct {
+	Logs []interface{}
+}
+
+type JobLog struct {
+	JobName      string `bson:"jobName"`
+	Command      string `bson:"command"`
+	Err          string `bson:"err"`
+	Output       string `bson:"output"`
+	PlanTime     int64  `bson:"planTime"`
+	ScheduleTime int64  `bson:"scheduleTime"`
+	StartTime    int64  `bson:"startTime"`
+	EndTime      int64  `bson:"endTime"`
+}
+
 type JobEvent struct {
 	Job  *Job
 	Type JobEventType

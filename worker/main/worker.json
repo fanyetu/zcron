@@ -3,5 +3,17 @@
   "etcdEndpoints": ["127.0.0.1:2379"],
 
   "etcd超时时间": "单位毫秒",
-  "etcdDialTimeout": 5000
+  "etcdDialTimeout": 5000,
+
+  "mongodb连接地址": "",
+  "mongoUrl": "mongodb://localhost:27017",
+
+  "mongodb连接超时时间": "单位毫秒",
+  "mongoTimeout": 5000,
+
+  "日志批量提交大小": "",
+  "batchSize": 100,
+
+  "日志批量提交超时时间": "单位毫秒",
+  "batchTimeout": 1000
 }

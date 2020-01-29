@@ -9,6 +9,10 @@ import (
 type Config struct {
 	EtcdEndpoints   []string `json:"etcdEndpoints"`
 	EtcdDialTimeout int      `json:"etcdDialTimeout"`
+	MongoUrl        string   `json:"mongoUrl"`
+	MongoTimeout    int      `json:"mongoTimeout"`
+	BatchSize       int      `json:"batchSize"`
+	BatchTimeout    int      `json:"batchTimeout"`
 }
 
 var (

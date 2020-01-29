@@ -52,11 +52,37 @@ func (scheduler *Scheduler) handleJobEvent(jobEvent *common.JobEvent) {
 
 // 处理任务执行结果
 func (scheduler *Scheduler) handleJobResult(jobResult *common.JobExecuteResult) {
+	var (
+		jobLog *common.JobLog
+	)
 	// 将执行信息从table中删除
 	delete(scheduler.JobExecutingTable, jobResult.ExecutingInfo.Job.JobName)
 
 	// 打印执行结果
 	fmt.Println("执行结果：", string(jobResult.Output), jobResult.Err, jobResult.StartTime, jobResult.EndTime)
+
+	// 将日志写入到mongodb中
+	if jobResult.Err != common.ERROR_LOCK_ALREADY_REQUIRED {
+		// 构建JobLog
+		jobLog = &common.JobLog{
+			JobName:      jobResult.ExecutingInfo.Job.JobName,
+			Command:      jobResult.ExecutingInfo.Job.Command,
+			PlanTime:     jobResult.ExecutingInfo.PlanTime.UnixNano() / 1000 / 1000,
+			ScheduleTime: jobResult.ExecutingInfo.RealTime.UnixNano() / 1000 / 1000,
+			StartTime:    jobResult.StartTime.UnixNano() / 1000 / 1000,
+			EndTime:      jobResult.EndTime.UnixNano() / 1000 / 1000,
+			Output:       string(jobResult.Output),
+		}
+
+		if jobResult.Err != nil {
+			jobLog.Err = jobResult.Err.Error()
+		} else {
+			jobLog.Err = ""
+		}
+
+		// 写入日志
+		G_logSink.AppendLog(jobLog)
+	}
 }
 
 func (scheduler *Scheduler) tryStartJob(jobPlan *common.JobPlan) {
