@@ -15,5 +15,5 @@
   "etcdDialTimeout": 5000,
 
   "静态文件根目录": "",
-  "staticDir": "./webRoot"
+  "staticDir": "./webroot/dist"
 }
