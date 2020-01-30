@@ -29,7 +29,7 @@ func (logSink *LogSink) writeLoop() {
 	var (
 		log          *common.JobLog
 		batch        *common.LogBatch
-		timeoutTimer time.Timer // 定时器，超过1秒提交一个批次
+		timeoutTimer *time.Timer // 定时器，超过1秒提交一个批次
 		timeoutBatch *common.LogBatch
 	)
 	for {
